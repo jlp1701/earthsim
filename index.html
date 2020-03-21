@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'unsafe-inline' https://www.w3schools.com https://fonts.googleapis.com/css https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css; font-src https://www.w3schools.com https://fonts.googleapis.com/css https://fonts.gstatic.com https://cdnjs.cloudflare.com">
+    <meta http-equiv="X-Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+      body, h1,h2,h3,h4,h5,h6 {font-family: "Montserrat", sans-serif}
+      .w3-row-padding img {margin-bottom: 12px}
+      /* Set the width of the sidebar to 120px */
+      .w3-sidebar {width: 120px;background: #222;}
+      /* Add a left margin to the "page content" that matches the width of the sidebar (120px) */
+      #main {margin-left: 120px}
+      /* Remove margins from "page content" on small screens */
+      @media only screen and (max-width: 600px) {#main {margin-left: 0}}
+      .grid-container {
+        display: grid;
+        grid-template-columns: auto auto auto;
+        padding: 2px;
+        }
+
+        .grid-item {
+        border: 1px solid rgba(0, 0, 0, 0.8);
+        padding: 5px;
+        font-size: 30px;
+        text-align: center;
+        align-content: center;
+        }
+      #abc {
+        width: 450px;
+
+      }
+      input {
+        width: 100px;
+      }
+      p {
+        font-size: 20
+      }
+    </style>
+    <title>Hello World!</title>
+  </head>
+  <body>
+    <h1>Hello World!</h1>
+    We are using Node.js <span id="node-version"></span>,
+    Chromium <span id="chrome-version"></span>,
+    and Electron <span id="electron-version"></span>.
+
+    <script type="module"  src="js/build/three.js"></script>
+    <script type="module" src="js/examples/jsm/controls/OrbitControls.js"></script>
+    <script type="module" src="js/examples/jsm/helpers/RectAreaLightHelper.js"></script>
+    <!-- <script src="js/THREE.MeshLine.js"></script> -->
+    <script src="js/Chart.js"></script>
+    <script type="module" src="src.js"></script>
+
+    <div class="grid-container w3-bar-block w3-center">
+      <div id="abc" class="grid-item" >
+        <h3>3D Simulation of Earth revolving around the sun.</h3>
+        <div id="ID_DIV_ANI"></div>
+        <div id="asd">
+            <p>
+              <label>Latitude: </label>
+              <input type="number" id="ID_TB_LAT" min="-90" max="90">
+            </p>
+            <p>
+              <label>Longitude: </label>
+              <input type="number" id="ID_TB_LONG" min="-180" max="180">
+            </p>
+            <p>
+              <label>Rotating: </label>
+              <input type="checkbox" id="ID_CHECK_ROT">
+            </p>
+          </div>
+      </div>
+      <div class="grid-item">
+        <h3>Daylength variation of a full year</h3>
+        <canvas id="myChart"></canvas>
+        <p>Start of year is not alinged to Gregorian calendar. The increasing and decreasing yellow circle indicates the daylight of the chosen latitude.</p>
+      </div>
+    </div>
+
+    <!-- You can also require other files to run in this process -->
+    <script src="./renderer.js"></script>
+  </body>
+</html>
