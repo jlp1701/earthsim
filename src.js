@@ -1,68 +1,71 @@
+'use strict';
+
     import { OrbitControls } from './js/examples/jsm/controls/OrbitControls.js';
     import { LineCurve3, Vector3 } from './js/build/three.module.js';
-import { RectAreaLightHelper } from './js/examples/jsm/helpers/RectAreaLightHelper.js';
+    import { RectAreaLightHelper } from './js/examples/jsm/helpers/RectAreaLightHelper.js';
 
-    var wndHeight = 400;
-    var wndWidth = 400;
+    let wndHeight = 400;
+    let wndWidth = 400;
 
-    var scene = new THREE.Scene();
+    let scene = new THREE.Scene();
     scene.background = new THREE.Color("black" );
-    var camera = new THREE.PerspectiveCamera( 75, wndWidth/wndHeight, 0.1, 3000 );
+    let camera = new THREE.PerspectiveCamera( 75, wndWidth/wndHeight, 0.1, 3000 );
     camera.position.set(0,0,0);
 
-    var renderer = new THREE.WebGLRenderer();
+    let renderer = new THREE.WebGLRenderer();
     renderer.setSize( wndWidth, wndHeight );
     document.getElementById("ID_DIV_ANI").appendChild( renderer.domElement );
 
  
 
     // variables
-    var posLong = 0;
-    var posLat = 50;
-    var rotEnabled = true;
+    let posLong = 0;
+    let posLat = 50;
+    let rotEnabled = false;
 
     // set default values of input fields
-    var tbLat = document.getElementById('ID_TB_LAT');
+    let tbLat = document.getElementById('ID_TB_LAT');
     tbLat.onchange = posChanged;
     tbLat.value = posLat;
-    var tbLong = document.getElementById('ID_TB_LONG');
+    let tbLong = document.getElementById('ID_TB_LONG');
     tbLong.onchange = posChanged;
     tbLong.value = posLong;
-    var checkBoxRot = document.getElementById('ID_CHECK_ROT');
+    let checkBoxRot = document.getElementById('ID_CHECK_ROT');
     checkBoxRot.onchange = posChanged;
     checkBoxRot.checked = rotEnabled;
 
 
-    var heightPerc = Math.sin(posLat*Math.PI/180);  // defines the relative latitudinal height of the spectator
-    var merOffset = Math.sin(posLong);
-    var sphRadius = 100;
-    var eclipticAngle = 23.43*Math.PI/180;  // 23.4 degrees 
-    var earthSunDist = 400;
-    var earthSunAngle = 0;
-    var rotIncrement = 0.005;
-    var rotOffset = -3.14;
-    var dA = 0.00001;
+    let heightPerc = Math.sin(posLat*Math.PI/180);  // defines the relative latitudinal height of the spectator
+    let merOffset = Math.sin(posLong);
+    let sphRadius = 100;
+    let eclipticAngle = 23.43*Math.PI/180;  // 23.43 degrees 
+    let earthSunDist = 400;
+    let earthSunAngle = 0;
+    let rotIncrement = 0.005;
+
+    let dA = 0.00001;
 
     // create daylength chart
-    var daylengthData = calcDayLengthData(posLat, eclipticAngle, 365); 
-    var chartDaylength = createChart(daylengthData);
+    let daylengthData = calcDayLengthData(posLat, eclipticAngle, 365); 
+    let chartDaylength = createChart(daylengthData);
 
     // enable mouse controls
-    var controls = new OrbitControls( camera, renderer.domElement );
+    let controls = new OrbitControls( camera, renderer.domElement );
     //controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
     //controls.dampingFactor = 0.05;
-    controls.screenSpacePanning = false;
+    //controls.screenSpacePanning = false;
     controls.minDistance = sphRadius;
     controls.maxDistance = 50*sphRadius;
-    controls.maxPolarAngle = Math.PI / 2;
-    controls.enablePan = false;
+    //controls.maxPolarAngle = Math.PI / 2;
+    //controls.enablePan = false;
     //controls.minAzimuthAngle = 0;
     //controls.maxAzimuthAngle = 0;
     
-    var geometry = new THREE.BufferGeometry();
-    var vertices = [];
-    var x,y,z;
-    for ( var i = 0; i < 10000; i ++ ) {
+    let geometry = new THREE.BufferGeometry();
+    let vertices = [];
+    let x,y,z;
+    let i = 0;
+    for (i = 0; i < 10000; i++ ) {
         x = THREE.Math.randFloatSpread( 2000 );
         y = THREE.Math.randFloatSpread( 2000 );
         z = THREE.Math.randFloatSpread( 2000 );
@@ -73,90 +76,63 @@ import { RectAreaLightHelper } from './js/examples/jsm/helpers/RectAreaLightHelp
         }
     }
     geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
-    var particles = new THREE.Points( geometry, new THREE.PointsMaterial( { color: 0x888888 } ) );
+    let particles = new THREE.Points( geometry, new THREE.PointsMaterial( { color: 0x888888 } ) );
     scene.add( particles );
 
     // add sun light
-	var dirLight = new THREE.DirectionalLight( 0xffffff );
-    //var light = new THREE.RectAreaLight(0xFFFFFF, 1, 100, 100);
+	let dirLight = new THREE.DirectionalLight( 0xffffff );
+    //let light = new THREE.RectAreaLight(0xFFFFFF, 1, 100, 100);
     dirLight.position.set( 0, 0, 0);
     dirLight.lookAt(0,0,0);
-    var rectLightHelper = new RectAreaLightHelper( dirLight );
+    let rectLightHelper = new RectAreaLightHelper( dirLight );
     
     
     dirLight.add( rectLightHelper );
     scene.add( dirLight );
 
-    var ambLight = new THREE.AmbientLight( 0x222222 );
+    let ambLight = new THREE.AmbientLight( 0x222222 );
     scene.add( ambLight );
 
-    // add earth
-    var sphEarth = new THREE.SphereGeometry( sphRadius, 128, 128 );
-    var earthMat = new THREE.MeshPhongMaterial(  );
-    earthMat.map    = new THREE.TextureLoader().load("res/earth_atmos_2048.jpg");
-    sphEarth.rotateY(rotOffset);
-    var earth = new THREE.Mesh( sphEarth, earthMat );
+    let earth = createEarth(sphRadius, heightPerc);
 
-    // create equator
-    var equGeo;
-    equGeo = generateCurveGeo(0, sphRadius);
-    equGeo.rotateX(Math.PI/2);
-    var equMat = new THREE.MeshBasicMaterial( { color : 0x00FF00 } );
-    // Create the final object to add to the scene
-    var equMesh = new THREE.Mesh( equGeo, equMat );
-    
-    // add meridian 0,180 degrees
-    var merGeo = generateCurveGeo(0, sphRadius);
-    var merMat = new THREE.MeshBasicMaterial( { color : 0x00FF00 } );
-    var merLine = new THREE.Mesh( merGeo, merMat );
-
-    // add meridian -90,90 degrees
-    var merGeo2 = generateCurveGeo(0, sphRadius);
-    merGeo.rotateY(Math.PI/2);
-    var merLine2 = new THREE.Mesh( merGeo2, equMat );
-    // Create the final object to add to the scene
-
-
-    // create curve
-    var curveGeo = generateCurveGeo(heightPerc*sphRadius, sphRadius);
-    curveGeo.rotateX(Math.PI/2);
-    curveGeo.translate(0,heightPerc*sphRadius,0);
-    var curveMat = new THREE.MeshBasicMaterial( { color : 0xFFFF00 } );
-    // Create the final object to add to the scene
-    var curveLine = new THREE.Mesh( curveGeo, curveMat );
-            
-    
-    // sphere axis
-    var materialAxis = new THREE.LineBasicMaterial( { color: 0xFFFFFF } );
-    var geometryAxis = new THREE.Geometry();
-    geometryAxis.vertices.push(new THREE.Vector3( 0, -2*sphRadius, 0) );
-    geometryAxis.vertices.push(new THREE.Vector3( 0, 2*sphRadius, 0) );
-    var poleAxis = new THREE.Line( geometryAxis, materialAxis );
-    
-    var meridianGroup = new THREE.Group();
-    meridianGroup.add(poleAxis);
-    meridianGroup.add(equMesh);
-    meridianGroup.add(merLine);
-    meridianGroup.add(merLine);
-    meridianGroup.add(merLine2);
-    meridianGroup.add(curveLine);
-    meridianGroup.rotateY(-Math.PI/2);
-
-    // group sphere and line
-    var sphereGroup = new THREE.Group();
-    sphereGroup.add(earth);
-    sphereGroup.add(meridianGroup);
-
-    sphereGroup.translateX(earthSunDist);
+    earth.sphereGroup.translateX(earthSunDist);
     // rotate sphere axis
-    sphereGroup.rotation.z = eclipticAngle;
+    earth.sphereGroup.rotation.z = eclipticAngle;
 
-    scene.add(sphereGroup);
+    // add coordinate helper
+    let sphOrigin = new THREE.SphereGeometry(10, 128, 128 );
+    let originMat = new THREE.MeshPhongMaterial(  );
+    let originMesh = new THREE.Mesh( sphOrigin, originMat );
+    scene.add(originMesh);
+
+    // draw axis arrows
+    let materialX = new THREE.LineBasicMaterial( { color: 0xFF0000 } );
+    let geometryX = new THREE.Geometry();
+    geometryX.vertices.push(new THREE.Vector3( 0, 0, 0) );
+    geometryX.vertices.push(new THREE.Vector3( 100, 0, 0) );
+    let XAxis = new THREE.Line( geometryX, materialX );
+    scene.add(XAxis);
+
+    let materialY = new THREE.LineBasicMaterial( { color: 0x00FF00 } );
+    let geometryY = new THREE.Geometry();
+    geometryY.vertices.push(new THREE.Vector3( 0, 0, 0) );
+    geometryY.vertices.push(new THREE.Vector3( 0, 100, 0) );
+    let YAxis = new THREE.Line( geometryY, materialY );
+    scene.add(YAxis);
+
+    let materialZ = new THREE.LineBasicMaterial( { color: 0x0000FF } );
+    let geometryZ = new THREE.Geometry();
+    geometryZ.vertices.push(new THREE.Vector3( 0, 0, 0) );
+    geometryZ.vertices.push(new THREE.Vector3( 0, 0, 100) );
+    let ZAxis = new THREE.Line( geometryZ, materialZ );
+    scene.add(ZAxis);
+
+    scene.add(earth.sphereGroup);
                 
     //camera.position.z = 3*sphRadius;
-    var e = 0;
-    var a = 0;
-    var animate = function () {
+    let e = 0;
+    let a = 0;
+    let animate = function () {
         requestAnimationFrame( animate );
         
         if (rotEnabled) {
@@ -167,35 +143,38 @@ import { RectAreaLightHelper } from './js/examples/jsm/helpers/RectAreaLightHelp
         if (earthSunAngle > 2*Math.PI){
             earthSunAngle %= 2*Math.PI;
         }
-        sphereGroup.position.x = Math.cos(earthSunAngle)*earthSunDist;
-        sphereGroup.position.z = Math.sin(earthSunAngle)*earthSunDist;
+        earth.sphereGroup.position.x = Math.cos(earthSunAngle)*earthSunDist;
+        earth.sphereGroup.position.z = Math.sin(earthSunAngle)*earthSunDist;
 
 
         // calculate the angle
         e = Math.cos(earthSunAngle) * eclipticAngle *-1;
-        if (Math.abs(e) >= 0)
-        var asin = Math.tan(posLat*Math.PI/180) * Math.tan(e);
-        if (asin < -1.0){
-            asin = -1.0;
+        if (Math.abs(e) >= 0) {
+            let asin = Math.tan(posLat*Math.PI/180) * Math.tan(e);
+            if (asin < -1.0){
+                asin = -1.0;
+            }
+            if (asin > 1.0){
+                asin = 1.0;
+            }
+            a = Math.asin(asin);
+            if (isNaN(a)) {
+                console.warn("a = NAN" + a);
+            }
+            //curveLine.geometry = generateCurveGeo(heightPerc*sphRadius, sphRadius,a, Math.PI-a);
+            //curveLine.geometry.rotateX(Math.PI/2);
+            //curveLine.geometry.translate(0,heightPerc*sphRadius,0);
+            earth.updateCurveLine(heightPerc, a);
+            //meridianGroup.rotation.y = -earthSunAngle - Math.PI/2;
+            //earth.rotation.y = -earthSunAngle - posLong;
+            earth.rotate(-earthSunAngle);
         }
-        if (asin > 1.0){
-            asin = 1.0;
-        }
-        a = Math.asin(asin);
-        if (isNaN(a)) {
-            console.warn("a = NAN" + a);
-        }
-        curveLine.geometry = generateCurveGeo(heightPerc*sphRadius, sphRadius,a, Math.PI-a);
-        curveLine.geometry.rotateX(Math.PI/2);
-        curveLine.geometry.translate(0,heightPerc*sphRadius,0);
-        meridianGroup.rotation.y = -earthSunAngle - Math.PI/2;
-        earth.rotation.y = -earthSunAngle - posLong;
-
+        
         // lock on camera to earth
-        camera.lookAt(sphereGroup.position);
+        camera.lookAt(earth.sphereGroup.position);
         
         // change light direction
-        dirLight.target =sphereGroup;
+        dirLight.target = earth.sphereGroup;
         
         updateChartCurrentDay(chartDaylength, (earthSunAngle+3*Math.PI/2));
 
@@ -205,6 +184,76 @@ import { RectAreaLightHelper } from './js/examples/jsm/helpers/RectAreaLightHelp
 
     animate();
             
+function createEarth(radius, heightPerc) {
+    let rotOffset = 3.14;  // 3.14
+    // add earth
+    let sphEarth = new THREE.SphereGeometry(radius, 128, 128 );
+    let earthMat = new THREE.MeshPhongMaterial(  );
+    earthMat.map = new THREE.TextureLoader().load("res/earth_atmos_2048.jpg");
+    sphEarth.rotateY(rotOffset);
+    let earthMesh = new THREE.Mesh( sphEarth, earthMat );
+
+    // create equator
+    let equGeo = generateCurveGeo(0, radius);
+    equGeo.rotateX(Math.PI/2);
+    let equMat = new THREE.MeshBasicMaterial( { color : 0x00FF00 } );
+    // Create the final object to add to the scene
+    let equMesh = new THREE.Mesh( equGeo, equMat );
+    
+    // add meridian 0,180 degrees
+    let merGeo = generateCurveGeo(0, radius);
+    let merMat = new THREE.MeshBasicMaterial( { color : 0x00FF00 } );
+    let merLine = new THREE.Mesh( merGeo, merMat );
+
+    // add meridian -90,90 degrees
+    let merGeo2 = generateCurveGeo(0, radius);
+    merGeo.rotateY(Math.PI/2);
+    let merLine2 = new THREE.Mesh( merGeo2, equMat );
+    // Create the final object to add to the scene
+    
+    // create curve
+    let curveGeo = generateCurveGeo(heightPerc*radius, radius);
+    curveGeo.rotateX(Math.PI/2);
+    curveGeo.translate(0,heightPerc*radius,0);
+    let curveMat = new THREE.MeshBasicMaterial( { color : 0xFFFF00 } );
+    // Create the final object to add to the scene
+    let curveLine = new THREE.Mesh( curveGeo, curveMat );
+            
+    // sphere axis
+    let materialAxis = new THREE.LineBasicMaterial( { color: 0xFFFFFF } );
+    let geometryAxis = new THREE.Geometry();
+    geometryAxis.vertices.push(new THREE.Vector3( 0, -2*radius, 0) );
+    geometryAxis.vertices.push(new THREE.Vector3( 0, 2*radius, 0) );
+    let poleAxis = new THREE.Line( geometryAxis, materialAxis );
+    
+    let meridianGroup = new THREE.Group();
+    meridianGroup.add(poleAxis);
+    meridianGroup.add(equMesh);
+    meridianGroup.add(merLine);
+    meridianGroup.add(merLine);
+    meridianGroup.add(merLine2);
+    meridianGroup.add(curveLine);
+    meridianGroup.rotateY(-Math.PI/2);
+
+    // group sphere and line
+    let sphereGroup = new THREE.Group();
+    sphereGroup.add(earthMesh);
+    sphereGroup.add(meridianGroup);
+
+    let earth = {};
+    earth.sphereGroup = sphereGroup;
+    earth.rotate = function (angle) {
+        meridianGroup.rotation.y = angle - Math.PI/2;
+        earthMesh.rotation.y = angle;
+    };
+    earth.updateCurveLine = function (heightPerc, a) {
+        curveLine.geometry = generateCurveGeo(heightPerc*sphRadius, sphRadius,a, Math.PI-a);
+        curveLine.geometry.rotateX(Math.PI/2);
+        curveLine.geometry.translate(0,heightPerc*sphRadius,0);
+    };
+    return earth;    
+}
+
 function calcCurveRadius(height, totalHeight){
     return Math.sqrt(totalHeight*totalHeight - height*height);
 }
@@ -220,30 +269,30 @@ function generateCurveGeo(height, totalHeight, angleStart=0, angleEnd=2*Math.PI)
     angleStart = normAngle(angleStart);
     angleEnd = normAngle(angleEnd);
     if (angleStart > angleEnd){
-        var t = angleEnd;
+        let t = angleEnd;
         angleEnd = angleStart;
-        angleStart = angleEnd;
+        angleStart = t;
     }
     // create curve
-    var curveRadius = calcCurveRadius(height, totalHeight);
-    //var curve = new THREE.EllipseCurve(0,0, curveRadius, curveRadius, angle, Math.PI-angle,false,0);
-    var curvePath = createCurvePath(curveRadius, 150, angleStart, angleEnd);
-    var curveGeo = new THREE.TubeGeometry(curvePath,32, 1, 8, false);
+    let curveRadius = calcCurveRadius(height, totalHeight);
+    //let curve = new THREE.EllipseCurve(0,0, curveRadius, curveRadius, angle, Math.PI-angle,false,0);
+    let curvePath = createCurvePath(curveRadius, 150, angleStart, angleEnd);
+    let curveGeo = new THREE.TubeGeometry(curvePath,32, 1, 8, false);
     //curveGeo.rotateX(Math.PI/2);
     //curveGeo.translate(0,height,0);
     return curveGeo;
 }
 
 function createCurvePath(radius, sections, angleStart, angleEnd){
-    var i = 0;
-    var path = new THREE.CurvePath();
-    var secAngle = (angleEnd-angleStart)/sections;
-    var secAngleStart = angleStart;
-    var secAngleEnd = secAngleStart + secAngle;
+    let i = 0;
+    let path = new THREE.CurvePath();
+    let secAngle = (angleEnd-angleStart)/sections;
+    let secAngleStart = angleStart;
+    let secAngleEnd = secAngleStart + secAngle;
     for (i = 0; i < sections; i++){
-        var v0 = new Vector3(radius*Math.cos(secAngleStart), radius*Math.sin(secAngleStart), 0);
-        var v1 = new Vector3(radius*Math.cos((secAngleEnd - secAngleStart)/2), radius*Math.sin((secAngleEnd - secAngleStart)/2), 0);
-        var v2 = new Vector3(radius*Math.cos(secAngleEnd), radius*Math.sin(secAngleEnd), 0);
+        let v0 = new Vector3(radius*Math.cos(secAngleStart), radius*Math.sin(secAngleStart), 0);
+        let v1 = new Vector3(radius*Math.cos((secAngleEnd - secAngleStart)/2), radius*Math.sin((secAngleEnd - secAngleStart)/2), 0);
+        let v2 = new Vector3(radius*Math.cos(secAngleEnd), radius*Math.sin(secAngleEnd), 0);
         path.add(new LineCurve3(v0, v2));
         secAngleStart = secAngleEnd;
         secAngleEnd += secAngle;
@@ -271,35 +320,35 @@ function posChanged(a){
 }
 
 function calcDayLength(lat, ecliptic){
-    var asin = Math.tan(lat*Math.PI/180)*Math.tan(ecliptic);
+    let asin = Math.tan(lat*Math.PI/180)*Math.tan(ecliptic);
     if (asin > 1.0){
         asin = 1.0;
     }
     if (asin < -1.0){
         asin = -1.0;
     }
-    var alpha = Math.asin(asin);
-    var relativeLength = (Math.PI-2*alpha)/Math.PI;
+    let alpha = Math.asin(asin);
+    let relativeLength = (Math.PI-2*alpha)/Math.PI;
     return relativeLength*12;
 }
 
 function calcDayLengthData(lat, maxEcliptic, numberOfPoints) {
-    var i = 0;
-    var angleInc = 2*Math.PI/numberOfPoints;
-    var dayInc = numberOfPoints/365;
-    var data = [];
+    let i = 0;
+    let angleInc = 2*Math.PI/numberOfPoints;
+    let dayInc = numberOfPoints/365;
+    let data = [];
     for (i = 0; i < numberOfPoints; i++){
-        var angle = i*angleInc;
-        var ecliptic = maxEcliptic*Math.sin(angle);
+        let angle = i*angleInc;
+        let ecliptic = maxEcliptic*Math.sin(angle);
         data.push({x: i*dayInc, y: calcDayLength(lat, ecliptic)});
     }
     return data;
 }
 
 function createChart(myData){
-    var ctx = document.getElementById('myChart');
+    let ctx = document.getElementById('myChart');
     //ctx.width = window.innerWidth;
-    var myChart = new Chart.Scatter(ctx, {
+    let myChart = new Chart.Scatter(ctx, {
         //type: 'bar',
         data: {
             datasets: [{
@@ -347,7 +396,7 @@ function createChart(myData){
 
 function updateChartData(chart, data) {
     // delete old data
-    var oldData = chart.data.datasets[0];
+    let oldData = chart.data.datasets[0];
     oldData.data = data;
     chart.update();
 }
@@ -356,7 +405,7 @@ function updateChartCurrentDay(chart, angle){
     if (angle > 2*Math.PI){
         angle %= 2*Math.PI;
     }
-    var day = angle/2/Math.PI*365;
+    let day = angle/2/Math.PI*365;
     chart.data.datasets[1].data = [{x: day, y:0}, {x:day, y:24}];
     chart.update();
 }
