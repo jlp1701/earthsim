@@ -47,7 +47,10 @@
 
     // create daylength chart
     let daylengthData = calcDayLengthData(posLat, eclipticAngle, 365); 
-    let chartDaylength = createChart(daylengthData);
+    let chartDaylength = createDayLengthChart(daylengthData);
+
+    let daylengthDiffData = calcDayLengthDiffData(daylengthData);
+    let chartDiff = createDiffChart(daylengthDiffData);
 
     // enable mouse controls
     let controls = new OrbitControls( camera, renderer.domElement );
@@ -177,6 +180,7 @@
         dirLight.target = earth.sphereGroup;
         
         updateChartCurrentDay(chartDaylength, (earthSunAngle+3*Math.PI/2));
+        updateChartCurrentDay(chartDiff, (earthSunAngle+3*Math.PI/2), true);
 
         //controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
         renderer.render( scene, camera );
@@ -315,8 +319,9 @@ function posChanged(a){
     
     rotEnabled = checkBoxRot.checked;
 
-
-    updateChartData(chartDaylength, calcDayLengthData(posLat, eclipticAngle, 365));
+    let data = calcDayLengthData(posLat, eclipticAngle, 365);
+    updateChartData(chartDaylength, data);
+    updateChartData(chartDiff, calcDayLengthDiffData(data));
 }
 
 function calcDayLength(lat, ecliptic){
@@ -338,14 +343,25 @@ function calcDayLengthData(lat, maxEcliptic, numberOfPoints) {
     let dayInc = numberOfPoints/365;
     let data = [];
     for (i = 0; i < numberOfPoints; i++){
-        let angle = i*angleInc;
+        let angle = (i+0)*angleInc;
         let ecliptic = maxEcliptic*Math.sin(angle);
         data.push({x: i*dayInc, y: calcDayLength(lat, ecliptic)});
     }
     return data;
 }
 
-function createChart(myData){
+function calcDayLengthDiffData(daylenData) {
+    let diffData = [];
+    let N = daylenData.length;
+    for (let i = 0; i < N; i++) {
+        let x = daylenData[i].x;
+        let dy = daylenData[i].y - daylenData[(i-1+N)%N].y;
+        diffData.push({x: x, y: dy});
+    }
+    return diffData;
+}
+
+function createDayLengthChart(myData){
     let ctx = document.getElementById('myChart');
     //ctx.width = window.innerWidth;
     let myChart = new Chart.Scatter(ctx, {
@@ -394,6 +410,55 @@ function createChart(myData){
     return myChart;
     }
 
+function createDiffChart(myData){
+    let ctx = document.getElementById('diffChart');
+    //ctx.width = window.innerWidth;
+    let myChart = new Chart.Scatter(ctx, {
+        //type: 'bar',
+        data: {
+            datasets: [{
+                label: 'Diff [h]',
+                data: myData,
+                type: 'scatter',
+                showLine: true,
+                fill: false,
+            },
+            {
+                label: 'currentDay',
+                data: [{x:180, y:0}, {x:180, y:24}],
+                type: 'line',
+                showLine: true,
+                borderColor: 'blue'
+            }
+        ]
+        },
+        options: {  
+            scales: {
+                xAxes: [{
+                        display: true,
+                        ticks: {
+                            beginAtZero: true,
+                            steps: 12,
+                            stepSize: 365/12,
+                            max: 365
+                        }
+                    }],
+                yAxes: [{
+                        display: true,
+                        stacked: true,
+                        ticks: {
+                            beginAtZero: true,
+                            suggestedMax: 0.15,
+                            suggestedMin: -0.15,
+                        }
+                    }]
+            },
+            animation: false
+            }
+    });
+    return myChart;
+    }
+
 function updateChartData(chart, data) {
     // delete old data
     let oldData = chart.data.datasets[0];
@@ -401,11 +466,18 @@ function updateChartData(chart, data) {
     chart.update();
 }
 
-function updateChartCurrentDay(chart, angle){
+function updateChartCurrentDay(chart, angle, scalingEnabled = false){
     if (angle > 2*Math.PI){
         angle %= 2*Math.PI;
     }
     let day = angle/2/Math.PI*365;
-    chart.data.datasets[1].data = [{x: day, y:0}, {x:day, y:24}];
+    let min = 0;
+    let max = 24;
+    if (scalingEnabled) {
+        let arr = chart.data.datasets[0].data.map((p) => {return p.y});
+        min = Math.min.apply(null, arr);
+        max = Math.max.apply(null, arr);
+    }
+    chart.data.datasets[1].data = [{x: day, y:min}, {x:day, y:max}];
     chart.update();
 }
