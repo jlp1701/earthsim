@@ -343,7 +343,7 @@ function calcDayLengthData(lat, maxEcliptic, numberOfPoints) {
     let dayInc = numberOfPoints/365;
     let data = [];
     for (i = 0; i < numberOfPoints; i++){
-        let angle = (i+0)*angleInc;
+        let angle = (i+100)*angleInc;
         let ecliptic = maxEcliptic*Math.sin(angle);
         data.push({x: i*dayInc, y: calcDayLength(lat, ecliptic)});
     }
@@ -471,6 +471,7 @@ function updateChartCurrentDay(chart, angle, scalingEnabled = false){
         angle %= 2*Math.PI;
     }
     let day = angle/2/Math.PI*365;
+    day = (day+265)%365;
     let min = 0;
     let max = 24;
     if (scalingEnabled) {
